@@ -29,7 +29,7 @@ app.use(express.json())
 app.use('/api', routes)
 app.use(globalErrorHanlder)
 
-console.log = () => { }
+// console.log = () => { }
 
 server.listen(serverPort, async () => {
   console.log(`Server is running on http://${ipAddress}:${serverPort}`)

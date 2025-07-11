@@ -69,34 +69,41 @@ const findDrugId = async (drugId: string): Promise<Drugs | null> => {
 
 const editDrugService = async (
   body: Drugs,
-  drugId: string,
+  drugCode: string,
   pic?: Express.Multer.File
 ): Promise<Drugs> => {
   try {
-    const filename = await getDrugImage(drugId)
-    // if (body.DrugStatus) body.DrugStatus = String(body.DrugStatus) == "1" ? true : false
-    body.DrugImage = !pic ? filename || null : `/img/drugs/${pic.filename}`
-    body.UpdatedAt = getDateFormat(new Date())
+    const filename = await getDrugImage(drugCode);
+    body.DrugImage = !pic ? filename || null : `/img/drugs/${pic.filename}`;
+    body.UpdatedAt = getDateFormat(new Date());
+
     const result = await prisma.drugs.update({
       where: {
-        Drugcode: drugId
+        Drugcode: drugCode, // ✅ ใช้ Drugcode เป็น key
       },
-      data: body
-    })
+      data: body,
+    });
+
     if (pic && !!filename)
-      fs.unlinkSync(path.join('public/images/drugs', filename.split('/')[3]))
-    return result
+      fs.unlinkSync(path.join('public/images/drugs', filename.split('/')[3]));
+
+    return result;
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2025') {
-        fs.unlinkSync(path.join('public/images/drugs', pic!.filename))
-        throw new HttpError(404, 'Drug not found to update')
+        if (pic)
+          fs.unlinkSync(path.join('public/images/drugs', pic.filename));
+        throw new HttpError(404, 'Drug not found to update');
       }
     }
-    fs.unlinkSync(path.join('public/images/drugs', pic!.filename))
-    throw error
+
+    if (pic)
+      fs.unlinkSync(path.join('public/images/drugs', pic.filename));
+
+    throw error;
   }
-}
+};
+
 
 const deleteDrugService = async (drugId: string): Promise<Drugs> => {
   try {
